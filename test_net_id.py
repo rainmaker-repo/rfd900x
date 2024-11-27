@@ -5,18 +5,36 @@ from rfd900x import RFDConfig
 from serial.tools import list_ports
 
 def enter_command_mode(radio):
-    time.sleep(1)  
+    time.sleep(1.5)
     radio.port.write("+++".encode())
-    time.sleep(1)  
-    response = radio.port.read(100).decode().strip()
+    time.sleep(1.5)
+    
+    # Read with retry
+    response = ""
+    for _ in range(3):
+        data = radio.port.read(100)
+        if data:
+            response = data.decode().strip()
+            break
+        time.sleep(0.5)
+    
     if "OK" not in response:
         print("Failed to enter command mode. Response:", response)
         sys.exit(1)
 
 def read_netid(radio):
     radio.port.write("ATS3?\r".encode())
-    time.sleep(0.1)
-    response = radio.port.read(100).decode().strip()
+    time.sleep(0.5)
+    
+    # Read with retry
+    response = ""
+    for _ in range(3):
+        data = radio.port.read(100)
+        if data:
+            response = data.decode().strip()
+            break
+        time.sleep(0.5)
+    
     # Clean up response to get just the number
     netid = response.replace('ATS3?', '').strip()
     print(f"Current NetID: {netid}")
@@ -96,7 +114,7 @@ def main():
         print("Error: NetID value required for write operation")
         sys.exit(1)
 
-    serial_port = '/dev/tty.usbserial-ABSCDOXC'
+    serial_port = '/dev/ttyUSB1'
     baud_rate = 57600
 
     # # Check if port exists
